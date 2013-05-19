@@ -1,0 +1,2 @@
+304586,"The WASA2 object-oriented workflow management system","Gottfried Vossen, Mathias Weske","International Conference on Management of Data",1999
+304587,"A user-centered interface for querying distributed multimedia databases","Isabel F. Cruz, Kimberly M. James","International Conference on Management of Data",1999

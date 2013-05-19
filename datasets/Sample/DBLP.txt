@@ -1,0 +1,3 @@
+"journals/sigmod/Mackay99","Semantic Integration of Environmental Models for Application to Global Information Systems and Decision-Making","D. Scott Mackay","SIGMOD Record",1999
+"conf/vldb/PoosalaI96","Estimation of Query-Result Distribution and its Application in Parallel-Join Load Balancing","Viswanath Poosala, Yannis E. Ioannidis","VLDB",1996
+"conf/vldb/PalpanasSCP02","Incremental Maintenance for Non-Distributive Aggregate Functions","Themistoklis Palpanas, Richard Sidle, Hamid Pirahesh, Roberta Cochrane","VLDB",2002
