@@ -1,0 +1,15 @@
+//created on: May 18, 2013
+package entityMatchRules
+
+//list any import classes here.
+import hdpjobs.SetCartesianProduct.Citation;
+import hdpjobs.SetCartesianProduct.CitationPair;
+
+//declare any global variables here
+rule "NegRule : year mismatch"  
+    when  
+        $entityPair : CitationPair(getEntityA().year.get() != getEntityB().year.get())  
+    then  
+        $entityPair.setAreMatchingCandidates(false);
+end
+

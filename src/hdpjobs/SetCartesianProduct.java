@@ -22,6 +22,10 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.kie.internal.KnowledgeBase;
+import org.kie.internal.runtime.StatefulKnowledgeSession;
+
+import utils.DroolsUtils;
 
 /**
  * A simple hadoop mapreduce job that generates the cartesian product of two datasets R and S to 
@@ -257,6 +261,7 @@ public class SetCartesianProduct extends Configured implements Tool
 	{
 		private Citation entityA;
 		private Citation entityB;
+		private boolean areMatchingCandidates = true;
 		
 		public CitationPair(Citation entityA, Citation entityB)
 		{
@@ -269,6 +274,23 @@ public class SetCartesianProduct extends Configured implements Tool
 		{
 			return "{" + entityA.toString() + " | " + entityB.toString() + "}";
 		}
+		
+		public Citation getEntityA() {
+			return entityA;
+		}
+
+		public Citation getEntityB() {
+			return entityB;
+		}
+
+		public boolean areMatchingCandidates() {
+			return areMatchingCandidates;
+		}
+
+		public void setAreMatchingCandidates(boolean areMatchingCandidates) {
+			this.areMatchingCandidates = areMatchingCandidates;
+		}
+
 	}
 	
 	/*
@@ -351,11 +373,17 @@ public class SetCartesianProduct extends Configured implements Tool
 	// --------- Reducer class --------------
 	public static class EntityMatchReducer extends Reducer<Text, Citation, NullWritable, Text> {
 		private Map<String, List<Citation>> citationsSetR = null;
+		private KnowledgeBase knowledgeBase = null;
+		private StatefulKnowledgeSession session = null;
 		
 		protected void setup(Context context) throws IOException, InterruptedException {
 			if(citationsSetR == null) {
 				citationsSetR = new HashMap<String, List<Citation>>();	
 			}
+			
+			// load drools rules here
+			// TODO : Need to make this generic
+			knowledgeBase = DroolsUtils.createKnowledgeBase("/home/hduser/workspace/EntityMatcher/src/rules/entityMatchNegRules.drl");
 		}
 
 		public void reduce(Text cartesianProductKey, Iterable<Citation> entities, Context context)  throws IOException, InterruptedException {
@@ -375,13 +403,24 @@ public class SetCartesianProduct extends Configured implements Tool
 				else if(key.contains(".S")) { // Set S objects have .S at the end of the key
 					 if(citationsSetR.containsKey(reducedKey)) {
 						List<Citation> entitiesR = citationsSetR.get(reducedKey);
+
+						session = knowledgeBase.newStatefulKnowledgeSession();
+						List<CitationPair> entityPairs = new ArrayList<CitationPair>();
 						for(Citation entityR : entitiesR) {
-							boolean areSameEntities = areSameEntities(entityR, entity);
-							if(areSameEntities) {
-								CitationPair entityPair = new CitationPair(entityR, entity);
+							CitationPair entityPair = new CitationPair(entityR, entity);
+							session.insert(entityPair);
+							entityPairs.add(entityPair);
+						}
+		
+						// Load drools rules and eliminate non-matching entities
+						session.fireAllRules();
+						for(CitationPair entityPair : entityPairs) {
+							if(entityPair.areMatchingCandidates) {
 								context.write(null, new Text(entityPair.toString()));
 							}
 						}
+						session.dispose();
+
 					}
 				}
 				
